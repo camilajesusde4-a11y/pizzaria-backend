@@ -5,22 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pizzaria Premium</title>
 
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
-body{background:#f5f5f5;}
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#f5f5f5;
+}
+
+/* HEADER */
 header{
   background:#d62828;
   color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
   padding:15px;
-  text-align:center;
   font-size:22px;
   font-weight:bold;
 }
 
+header img{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  object-fit:cover;
+}
+
+/* GRID */
 .container{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
   gap:15px;
   padding:15px;
 }
@@ -29,19 +46,20 @@ header{
   background:white;
   border-radius:12px;
   overflow:hidden;
-  box-shadow:0 3px 8px rgba(0,0,0,0.1);
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+.card img{
+  width:100%;
+  height:140px;
+  object-fit:cover;
 }
 
 .content{padding:10px;}
+
 .nome{font-weight:bold;font-size:18px;}
-
-.desc{
-  font-size:13px;
-  color:#666;
-  margin:5px 0;
-}
-
-.preco{color:#2a9d8f;font-weight:bold;margin:5px 0;}
+.desc{font-size:12px;color:#666;margin:5px 0;}
+.preco{color:#2a9d8f;font-weight:bold;}
 
 button{
   width:100%;
@@ -53,6 +71,7 @@ button{
   cursor:pointer;
 }
 
+/* CARRINHO */
 .cart-button{
   position:fixed;
   bottom:20px;
@@ -68,48 +87,85 @@ button{
   color:white;
 }
 
-#cart-count{
+#badge{
   position:absolute;
   top:5px;
   right:5px;
   background:red;
   color:white;
   font-size:12px;
-  padding:4px 7px;
+  padding:3px 7px;
   border-radius:50%;
 }
 
+/* CART */
 .cart{
   position:fixed;
   right:-100%;
   top:0;
-  width:320px;
+  width:360px;
   height:100%;
   background:white;
-  padding:15px;
   transition:0.3s;
-  box-shadow:-3px 0 10px rgba(0,0,0,0.2);
+  box-shadow:-5px 0 20px rgba(0,0,0,0.2);
+  padding:15px;
+  overflow:auto;
+  z-index:999;
 }
 
 .cart.active{right:0;}
 
+.cart-header{
+  position:relative;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.close-cart{
+  width:32px;
+  height:32px;
+  background:#d62828;
+  color:white;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  position:absolute;
+  top:-12px;
+  left:-12px;
+}
+
+/* ITEM */
 .item{
   display:flex;
   justify-content:space-between;
-  margin-bottom:10px;
+  padding:10px;
+  margin-bottom:8px;
+  background:#f6f6f6;
+  border-radius:10px;
 }
 
-.controls button{
-  width:25px;
-  padding:3px;
+.qtd{
+  background:#d62828;
+  color:white;
+  padding:4px 8px;
+  border-radius:50%;
+  font-size:12px;
 }
 
 input{
   width:100%;
   padding:10px;
-  margin-top:10px;
+  margin-top:6px;
   border-radius:8px;
   border:1px solid #ccc;
+}
+
+.finalizar{
+  background:#d62828;
+  margin-top:10px;
 }
 
 .total{
@@ -117,176 +173,168 @@ input{
   font-weight:bold;
 }
 
-.finalizar{
-  background:#25d366;
-  margin-top:10px;
+/* OVERLAY PIX */
+.overlay{
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:#0008;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
 }
 </style>
 </head>
 
 <body>
 
-<header>🍕 Pizzaria Premium</header>
+<header>
+  <img src="https://via.placeholder.com/100" alt="Logo">
+  <span>Pizzaria Premium</span>
+</header>
 
-<div class="container">
+<div class="container" id="menu"></div>
 
-<div class="card">
-<div class="content">
-<div class="nome">Calabresa</div>
-<div class="desc">Molho, queijo, calabresa e cebola</div>
-<div class="preco">R$ 30</div>
-<button onclick="add('Calabresa',30)">Adicionar</button>
-</div>
-</div>
-
-<div class="card">
-<div class="content">
-<div class="nome">Frango c/ Catupiry</div>
-<div class="desc">Frango desfiado, catupiry e queijo</div>
-<div class="preco">R$ 35</div>
-<button onclick="add('Frango c/ Catupiry',35)">Adicionar</button>
-</div>
-</div>
-
-</div>
-
-<div class="cart-button" onclick="toggleCart()">
-🛒 <span id="cart-count">0</span>
-</div>
+<div class="cart-button" onclick="toggleCart()">🛒 <span id="badge">0</span></div>
 
 <div class="cart" id="cart">
-<h2>Detalhes do pedido</h2>
-<div id="itens"></div>
-<div class="total">Total: R$ <span id="total">0</span></div>
 
-<input id="cliente" placeholder="Nome:">
+<div class="cart-header">
+  <h2>Seu Pedido</h2>
+  <div class="close-cart" onclick="toggleCart()">✖</div>
+</div>
+
+<div id="itens"></div>
+
+<div>Total: R$ <span id="total">0</span></div>
+
+<input id="nome" placeholder="Nome">
+<input id="endereco" placeholder="Endereço">
+<input id="numero" placeholder="Número">
 
 <button class="finalizar" onclick="finalizar()">Finalizar Pedido</button>
+
 </div>
 
 <script>
-let carrinho = [];
+
+/* ===== 15 PIZZAS RESTAURADAS ===== */
+const pizzas=[
+{nome:"Calabresa",preco:30,desc:"Calabresa e queijo",img:"https://images.unsplash.com/photo-1601924582970"},
+{nome:"Frango Catupiry",preco:35,desc:"Frango cremoso",img:"https://images.unsplash.com/photo-1604382354936"},
+{nome:"4 Queijos",preco:38,desc:"Queijos especiais",img:"https://images.unsplash.com/photo-1594007654729"},
+{nome:"Pepperoni",preco:40,desc:"Pepperoni italiano",img:"https://images.unsplash.com/photo-1593560708920"},
+{nome:"Chocolate",preco:32,desc:"Chocolate derretido",img:"https://images.unsplash.com/photo-1605478371340"},
+{nome:"Vegana",preco:29,desc:"Vegetais frescos",img:"https://images.unsplash.com/photo-1513104890138"},
+{nome:"Portuguesa",preco:34,desc:"Presunto e ovos",img:"https://images.unsplash.com/photo-1604917877934"},
+{nome:"Bacon",preco:36,desc:"Bacon crocante",img:"https://images.unsplash.com/photo-1542281286"},
+{nome:"Marguerita",preco:28,desc:"Tomate e manjericão",img:"https://images.unsplash.com/photo-1548365328"},
+{nome:"Atum",preco:33,desc:"Atum e cebola",img:"https://images.unsplash.com/photo-1611270629569"},
+{nome:"Carne Seca",preco:37,desc:"Carne seca e catupiry",img:"https://images.unsplash.com/photo-1601924928359"},
+{nome:"Frango Bacon",preco:39,desc:"Frango e bacon",img:"https://images.unsplash.com/photo-1593560708920"},
+{nome:"Suprema",preco:42,desc:"Pizza completa",img:"https://images.unsplash.com/photo-1601924582970"},
+{nome:"Especial da Casa",preco:45,desc:"Receita secreta",img:"https://images.unsplash.com/photo-1601924928359"},
+{nome:"Napolitana",preco:31,desc:"Tomate e queijo",img:"https://images.unsplash.com/photo-1548365328"}
+];
+
+const menu=document.getElementById("menu");
+
+pizzas.forEach(p=>{
+menu.innerHTML+=`
+<div class="card">
+<img src="${p.img}">
+<div class="content">
+<div class="nome">${p.nome}</div>
+<div class="desc">${p.desc}</div>
+<div class="preco">R$ ${p.preco}</div>
+<button onclick="add('${p.nome}',${p.preco})">Adicionar</button>
+</div>
+</div>`;
+});
+
+/* ===== CARRINHO ===== */
+let carrinho=[];
 
 function add(nome,preco){
-  let item = carrinho.find(p=>p.nome===nome);
-  if(item){item.qtd++;}else{carrinho.push({nome,preco,qtd:1});}
-  render();
+let item=carrinho.find(i=>i.nome===nome);
+if(item) item.qtd++;
+else carrinho.push({nome,preco,qtd:1});
+render();
 }
 
 function render(){
-  let lista = document.getElementById("itens");
-  let total=0, qtdTotal=0;
-
-  lista.innerHTML="";
-
-  carrinho.forEach((item,i)=>{
-    total += item.preco*item.qtd;
-    qtdTotal += item.qtd;
-
-    lista.innerHTML += `
-    <div class="item">
-      ${item.nome} (${item.qtd})
-      <div class="controls">
-        <button onclick="menos(${i})">-</button>
-        <button onclick="mais(${i})">+</button>
-      </div>
-    </div>`;
-  });
-
-  document.getElementById("total").innerText=total.toFixed(2);
-  document.getElementById("cart-count").innerText=qtdTotal;
-}
-
-function mais(i){carrinho[i].qtd++; render();}
-function menos(i){
-  carrinho[i].qtd--;
-  if(carrinho[i].qtd<=0) carrinho.splice(i,1);
-  render();
+let total=0,qtd=0;
+let box=document.getElementById("itens");
+box.innerHTML="";
+carrinho.forEach(i=>{
+total+=i.preco*i.qtd;
+qtd+=i.qtd;
+box.innerHTML+=`
+<div class="item">
+<span>${i.nome}</span>
+<span class="qtd">${i.qtd}</span>
+</div>`;
+});
+document.getElementById("total").innerText=total;
+document.getElementById("badge").innerText=qtd;
 }
 
 function toggleCart(){
-  document.getElementById("cart").classList.toggle("active");
+document.getElementById("cart").classList.toggle("active");
 }
 
+/* ===== PIX (RESTAURADO) ===== */
 async function finalizar(){
-  let nome = document.getElementById("cliente").value;
-  let total = parseFloat(document.getElementById("total").innerText);
 
-  if(total <= 0){
-    alert("Carrinho vazio!");
-    return;
-  }
+const loading=document.createElement("div");
+loading.className="overlay";
+loading.innerHTML="<div style='background:white;padding:20px;border-radius:10px;'>Gerando PIX...</div>";
+document.body.appendChild(loading);
 
-  if(!nome){
-    alert("Digite seu nome");
-    return;
-  }
+const nome=document.getElementById("nome").value;
+const total=document.getElementById("total").innerText;
 
-  try{
-    const resposta = await fetch("https://pizzaria-backend-hfur.onrender.com/criar-pix", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        amount: total,
-        description: "Pedido Pizzaria",
-        payerName: nome,
-        payerDocument: "12345678900"
-      })
-    });
+const res=await fetch("https://pizzaria-backend-hfur.onrender.com/criar-pix",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+amount:total,
+payerName:nome,
+payerDocument:"12345678900"
+})
+});
 
-    const dados = await resposta.json();
+const data=await res.json();
 
-    console.log("RESPOSTA API:", dados);
+loading.remove();
 
-    if(!dados.qrcodeUrl){
-      alert("Erro da API. Veja o console (F12)");
-      return;
-    }
+/* POPUP PIX */
+const popup=document.createElement("div");
+popup.className="overlay";
 
-    abrirPopupPix(dados);
-    verificarPagamento(dados.transactionId);
+popup.innerHTML=`
+<div style="background:white;padding:20px;border-radius:12px;position:relative;width:320px;text-align:center">
 
-  }catch(e){
-    alert("Erro ao gerar Pix");
-    console.log("ERRO:", e);
-  }
+<div onclick="this.parentElement.parentElement.remove()"
+style="position:absolute;top:-10px;right:-10px;width:30px;height:30px;background:#d62828;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">✖</div>
+
+<h3>PIX Gerado</h3>
+
+<canvas id="qr"></canvas>
+
+<button onclick="navigator.clipboard.writeText('${data.copyPaste}')"
+style="margin-top:10px;width:100%;">
+Copiar PIX
+</button>
+
+</div>`;
+
+document.body.appendChild(popup);
+
+QRCode.toCanvas(document.getElementById("qr"), data.copyPaste);
 }
 
-function abrirPopupPix(dados){
-  const popup = document.createElement("div");
-
-  popup.innerHTML = `
-    <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000000cc;display:flex;align-items:center;justify-content:center;">
-      <div style="background:white;padding:20px;border-radius:12px;text-align:center;width:320px;">
-        <h2>Pagamento via Pix</h2>
-        <img style="width:200px;" src="data:image/png;base64,${dados.qrcodeUrl.replace('base64:', '')}" />
-        <textarea style="width:100%;height:80px;">${dados.copyPaste}</textarea>
-        <button onclick="this.closest('div').parentElement.remove()">Fechar</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(popup);
-}
-
-async function verificarPagamento(id){
-  const intervalo = setInterval(async () => {
-
-    const res = await fetch("https://pizzaria-backend-hfur.onrender.com/verificar/" + id);
-    const data = await res.json();
-
-    console.log("STATUS:", data);
-
-    if(data.transaction && data.transaction.transactionState === "COMPLETO"){
-      clearInterval(intervalo);
-      alert("Pagamento confirmado!");
-      location.reload();
-    }
-
-  }, 5000);
-}
 </script>
 
 </body>
