@@ -6,8 +6,8 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const CLIENT_ID = "live_1ef3c07d203af33a5fb0d8b0f5a4f4c9";
-const CLIENT_SECRET = "sk_d0470e88b7fba535b866043d011246f3241fe8611eba65b012f105aa522cfe7b";
+const CLIENT_ID = "live_e9fc5eb37ac903427f1099e4d1d5db3d";
+const CLIENT_SECRET = "sk_90a355f30b993e134693c7b40e32052bf77eb2733a853ceb990e0e5261f7fdf6";
 
 app.post("/criar-pix", async (req, res) => {
   try {

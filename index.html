@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pizzaria Premium</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+body{background:#f5f5f5;}
+
+header{
+  background:#d62828;
+  color:white;
+  padding:15px;
+  text-align:center;
+  font-size:22px;
+  font-weight:bold;
+}
+
+.container{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:15px;
+  padding:15px;
+}
+
+.card{
+  background:white;
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 3px 8px rgba(0,0,0,0.1);
+}
+
+.content{padding:10px;}
+.nome{font-weight:bold;font-size:18px;}
+
+.desc{
+  font-size:13px;
+  color:#666;
+  margin:5px 0;
+}
+
+.preco{color:#2a9d8f;font-weight:bold;margin:5px 0;}
+
+button{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  background:#2a9d8f;
+  color:white;
+  cursor:pointer;
+}
+
+.cart-button{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  width:65px;
+  height:65px;
+  border-radius:50%;
+  background:#25d366;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:26px;
+  color:white;
+}
+
+#cart-count{
+  position:absolute;
+  top:5px;
+  right:5px;
+  background:red;
+  color:white;
+  font-size:12px;
+  padding:4px 7px;
+  border-radius:50%;
+}
+
+.cart{
+  position:fixed;
+  right:-100%;
+  top:0;
+  width:320px;
+  height:100%;
+  background:white;
+  padding:15px;
+  transition:0.3s;
+  box-shadow:-3px 0 10px rgba(0,0,0,0.2);
+}
+
+.cart.active{right:0;}
+
+.item{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:10px;
+}
+
+.controls button{
+  width:25px;
+  padding:3px;
+}
+
+input{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+
+.total{
+  margin-top:10px;
+  font-weight:bold;
+}
+
+.finalizar{
+  background:#25d366;
+  margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>🍕 Pizzaria Premium</header>
+
+<div class="container">
+
+<div class="card">
+<div class="content">
+<div class="nome">Calabresa</div>
+<div class="desc">Molho, queijo, calabresa e cebola</div>
+<div class="preco">R$ 30</div>
+<button onclick="add('Calabresa',30)">Adicionar</button>
+</div>
+</div>
+
+<div class="card">
+<div class="content">
+<div class="nome">Frango c/ Catupiry</div>
+<div class="desc">Frango desfiado, catupiry e queijo</div>
+<div class="preco">R$ 35</div>
+<button onclick="add('Frango c/ Catupiry',35)">Adicionar</button>
+</div>
+</div>
+
+</div>
+
+<div class="cart-button" onclick="toggleCart()">
+🛒 <span id="cart-count">0</span>
+</div>
+
+<div class="cart" id="cart">
+<h2>Detalhes do pedido</h2>
+<div id="itens"></div>
+<div class="total">Total: R$ <span id="total">0</span></div>
+
+<input id="cliente" placeholder="Nome:">
+
+<button class="finalizar" onclick="finalizar()">Finalizar Pedido</button>
+</div>
+
+<script>
+let carrinho = [];
+
+function add(nome,preco){
+  let item = carrinho.find(p=>p.nome===nome);
+  if(item){item.qtd++;}else{carrinho.push({nome,preco,qtd:1});}
+  render();
+}
+
+function render(){
+  let lista = document.getElementById("itens");
+  let total=0, qtdTotal=0;
+
+  lista.innerHTML="";
+
+  carrinho.forEach((item,i)=>{
+    total += item.preco*item.qtd;
+    qtdTotal += item.qtd;
+
+    lista.innerHTML += `
+    <div class="item">
+      ${item.nome} (${item.qtd})
+      <div class="controls">
+        <button onclick="menos(${i})">-</button>
+        <button onclick="mais(${i})">+</button>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById("total").innerText=total.toFixed(2);
+  document.getElementById("cart-count").innerText=qtdTotal;
+}
+
+function mais(i){carrinho[i].qtd++; render();}
+function menos(i){
+  carrinho[i].qtd--;
+  if(carrinho[i].qtd<=0) carrinho.splice(i,1);
+  render();
+}
+
+function toggleCart(){
+  document.getElementById("cart").classList.toggle("active");
+}
+
+async function finalizar(){
+  let nome = document.getElementById("cliente").value;
+  let total = parseFloat(document.getElementById("total").innerText);
+
+  if(total <= 0){
+    alert("Carrinho vazio!");
+    return;
+  }
+
+  if(!nome){
+    alert("Digite seu nome");
+    return;
+  }
+
+  try{
+    const resposta = await fetch("https://pizzaria-backend-hfur.onrender.com/criar-pix", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        amount: total,
+        description: "Pedido Pizzaria",
+        payerName: nome,
+        payerDocument: "12345678900"
+      })
+    });
+
+    const dados = await resposta.json();
+
+    console.log("RESPOSTA API:", dados);
+
+    if(!dados.qrcodeUrl){
+      alert("Erro da API. Veja o console (F12)");
+      return;
+    }
+
+    abrirPopupPix(dados);
+    verificarPagamento(dados.transactionId);
+
+  }catch(e){
+    alert("Erro ao gerar Pix");
+    console.log("ERRO:", e);
+  }
+}
+
+function abrirPopupPix(dados){
+  const popup = document.createElement("div");
+
+  popup.innerHTML = `
+    <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000000cc;display:flex;align-items:center;justify-content:center;">
+      <div style="background:white;padding:20px;border-radius:12px;text-align:center;width:320px;">
+        <h2>Pagamento via Pix</h2>
+        <img style="width:200px;" src="data:image/png;base64,${dados.qrcodeUrl.replace('base64:', '')}" />
+        <textarea style="width:100%;height:80px;">${dados.copyPaste}</textarea>
+        <button onclick="this.closest('div').parentElement.remove()">Fechar</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+}
+
+async function verificarPagamento(id){
+  const intervalo = setInterval(async () => {
+
+    const res = await fetch("https://pizzaria-backend-hfur.onrender.com/verificar/" + id);
+    const data = await res.json();
+
+    console.log("STATUS:", data);
+
+    if(data.transaction && data.transaction.transactionState === "COMPLETO"){
+      clearInterval(intervalo);
+      alert("Pagamento confirmado!");
+      location.reload();
+    }
+
+  }, 5000);
+}
+</script>
+
+</body>
+</html>
