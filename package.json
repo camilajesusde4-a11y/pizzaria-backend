@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {
   "name": "pizzaria-backend",
   "version": "1.0.0",
@@ -8,4 +9,16 @@
     "node-fetch": "^3.3.2",
     "cors": "^2.8.5"
   }
+=======
+{
+  "name": "pizzaria-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.2",
+    "cors": "^2.8.5"
+  }
+>>>>>>> ad753528522ffa55c2bc445f919ef23444d585d5
 }
