@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pizzaria Premium</title>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+<style>
+body{margin:0;font-family:Arial;background:#f5f5f5;}
+
+header{
+background:#d62828;color:white;display:flex;align-items:center;
+justify-content:center;gap:10px;padding:15px;font-size:22px;font-weight:bold;
+}
+
+header img{width:42px;height:42px;border-radius:50%;object-fit:cover;}
+
+.container{
+display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+gap:15px;padding:15px;
+}
+
+.card{
+background:white;border-radius:12px;overflow:hidden;
+box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+.card img{width:100%;height:140px;object-fit:cover;}
+
+.content{padding:10px;}
+.nome{font-weight:bold;font-size:18px;}
+.desc{font-size:12px;color:#666;margin:5px 0;}
+.preco{color:#2a9d8f;font-weight:bold;}
+
+button{
+width:100%;padding:10px;border:none;border-radius:8px;
+background:#2a9d8f;color:white;cursor:pointer;
+}
+
+.cart-button{
+position:fixed;bottom:20px;right:20px;width:65px;height:65px;
+border-radius:50%;background:#25d366;display:flex;
+align-items:center;justify-content:center;font-size:26px;color:white;
+}
+
+#badge{
+position:absolute;top:5px;right:5px;background:red;color:white;
+font-size:12px;padding:3px 7px;border-radius:50%;
+}
+
+.cart{
+position:fixed;right:-100%;top:0;width:360px;height:100%;
+background:white;transition:0.3s;box-shadow:-5px 0 20px rgba(0,0,0,0.2);
+padding:15px;overflow:auto;z-index:999;
+}
+
+.cart.active{right:0;}
+
+.close-cart{
+position:absolute;top:-12px;left:-12px;width:32px;height:32px;
+background:#d62828;color:white;border-radius:50%;
+display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+
+.item{
+display:flex;justify-content:space-between;padding:10px;
+margin-bottom:8px;background:#f6f6f6;border-radius:10px;
+}
+
+.qtd{
+background:#d62828;color:white;padding:4px 8px;border-radius:50%;
+font-size:12px;
+}
+
+input{
+width:100%;padding:10px;margin-top:6px;border-radius:8px;
+border:1px solid #ccc;
+}
+
+.finalizar{background:#d62828;margin-top:10px;}
+
+.overlay{
+position:fixed;top:0;left:0;width:100%;height:100%;
+background:#0008;display:flex;align-items:center;
+justify-content:center;z-index:9999;
+}
+
+.promo-overlay{
+position:fixed;top:0;left:0;width:100%;height:100%;
+background:#0008;display:flex;align-items:center;
+justify-content:center;z-index:99999;
+}
+
+.promo-box{
+background:white;padding:20px;border-radius:12px;
+width:300px;text-align:center;position:relative;
+}
+
+.promo-close{
+position:absolute;
+top:10px;
+left:10px;
+width:30px;
+height:30px;
+background:#d62828;
+color:white;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+}
+
+.promo-img{
+width:100%;
+height:auto;
+object-fit:contain;
+border-radius:10px;
+margin:10px 0;
+}
+
+.combo-destaque{
+border:3px solid #ff7b00;
+transform:scale(1.07);
+box-shadow:0 15px 35px rgba(0,0,0,0.35);
+z-index:2;
+position:relative;
+}
+
+.faixa{
+position:absolute;
+top:12px;
+left:-50px;
+background:linear-gradient(45deg,#ff0000,#ff7b00);
+color:#fff;
+padding:6px 80px;
+font-size:12px;
+font-weight:bold;
+transform:rotate(-25deg);
+}
+
+.desconto{
+position:absolute;
+top:10px;
+right:10px;
+background:#2a9d8f;
+color:white;
+padding:6px 10px;
+border-radius:10px;
+font-size:12px;
+font-weight:bold;
+}
+
+.old{
+text-decoration:line-through;
+color:#999;
+font-size:13px;
+margin-right:6px;
+}
+
+.combo-destaque:hover{
+transform:scale(1.10);
+transition:0.3s;
+}
+</style>
+</head>
+
+<body>
+
+<header style="display:flex;align-items:center;justify-content:center;gap:12px;background:#d62828;padding:15px;">
+
+<!-- LOGO -->
+<img src="https://i.imgur.com/jip50Sq.png"
+style="width:50px;height:50px;border-radius:50%;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,0.3);">
+
+<!-- NOME ESTILIZADO -->
+<span style="
+font-family:'Lobster', cursive;
+font-size:38px;
+color:#fff;
+text-shadow:2px 2px 5px rgba(0,0,0,0.5);
+">
+Égua da <span style="color:#ffd166;">Pizza</span>
+</span>
+
+</header>
+
+<div id="menu" class="container"></div>
+
+<div class="cart-button" onclick="toggleCart()">🛒 <span id="badge">0</span></div>
+
+<div class="cart" id="cart">
+<h2>Seu Pedido</h2>
+<div class="close-cart" onclick="toggleCart()">✖</div>
+
+<div id="itens"></div>
+<div>Total: R$ <span id="total">0</span></div>
+
+<input id="nome" placeholder="Nome">
+<input id="endereco" placeholder="Rua">
+<input id="numero" placeholder="Número">
+
+<input id="bairro" placeholder="Bairro">
+<input id="complemento" placeholder="Complemento">
+<input id="ponto" placeholder="Ponto de referência">
+<input id="whatsapp" placeholder="WhatsApp">
+
+<button class="finalizar" onclick="finalizar()">Finalizar Pedido</button>
+</div>
+
+<script>
+
+/* PROMO */
+window.onload=function(){mostrarPromo();}
+
+function mostrarPromo(){
+const promo=document.createElement("div");
+promo.className="promo-overlay";
+
+promo.innerHTML=`
+<div class="promo-box">
+<div class="promo-close" onclick="this.parentElement.parentElement.remove()">✖</div>
+<h2>🔥PROMOÇÃO ÉGUA🔥</h2>
+<img class="promo-img" src="https://i.imgur.com/H3g2Ssj.png">
+<p style="font-weight:bold;">Compre 2 pizzas e ganhe um refrigerante grátis!</p>
+<button onclick="this.parentElement.parentElement.remove()">Ver Cardápio</button>
+</div>`;
+document.body.appendChild(promo);
+}
+
+/* PIZZAS */
+const pizzas=[
+{
+nome:"Combo promocional",
+preco:44.90,
+desc:"1 pizza calabresa e 1 pizza 4 queijos",
+img:"https://i.imgur.com/0jtZ78X.png",
+maisVendido:true
+},
+{nome:"Calabresa",preco:30,desc:"Calabresa fatiada, cebola, molho de tomate e queijo mussarela",img:"https://cdn0.tudoreceitas.com/pt/posts/9/8/3/pizza_calabresa_e_mussarela_4389_600.jpg"},
+{nome:"Frango Catupiry",preco:35,desc:"Frango desfiado, catupiry cremoso, milho e queijo mussarela",img:"https://media-cdn.tripadvisor.com/media/photo-s/0c/b2/f2/69/pizza-frango-catupiry.jpg"},
+{nome:"4 Queijos",preco:38,desc:"Mussarela, parmesão, gorgonzola e catupiry com molho especial",img:"https://restauranteviaferrea.com.br/wp-content/uploads/2017/05/Pizza-quatro-queijos1.jpg"},
+{nome:"Pepperoni",preco:40,desc:"Pepperoni fatiado, molho de tomate e queijo mussarela",img:"https://claudia.abril.com.br/wp-content/uploads/2020/07/pizza-pepperoni.jpg?quality=70&strip=info&w=1024"},
+{nome:"Chocolate",preco:32,desc:"Chocolate ao leite derretido com cobertura cremosa",img:"https://img.freepik.com/fotos-premium/close-up-de-pizza-de-chips-de-chocolate-em-tabua-de-madeira_1372814-53.jpg?semt=ais_related_payload_trends&w=740&q=80"},
+{nome:"Vegana",preco:29,desc:"Tomate, milho, cebola, azeitona e ervas frescas",img:"https://www.sabornamesa.com.br/media/k2/items/cache/328365b4dbe4c75cbdbd88f3cb43706d_XL.jpg"},
+{nome:"Portuguesa",preco:34,desc:"Presunto, ovos, cebola, azeitona, molho e queijo",img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFEw4ZvGHORDTQX5o4XaMiyfxLck3ZEqgOxg&s"},
+{nome:"Bacon",preco:36,desc:"Bacon crocante, molho especial e queijo mussarela",img:"https://www.seara.com.br/wp-content/uploads/2025/09/R0325-SL-pizza-de-bacon-fatiado-cebola-caramelizada-1200x675-1.webp"},
+{nome:"Marguerita",preco:28,desc:"Tomate, manjericão fresco, molho e queijo mussarela",img:"https://www.receitasnestle.com.br/sites/default/files/styles/recipe_detail_desktop_new/public/srh_recipes/494feec171f5683665eba434d22e52f5.jpg?itok=n3xpYgtR"},
+{nome:"Atum",preco:33,desc:"Atum, cebola, molho de tomate e queijo mussarela",img:"https://i.pinimg.com/736x/56/09/b6/5609b67514cf0f4dc928729e56fbc550.jpg"},
+{nome:"Carne Seca",preco:37,desc:"Carne seca desfiada, catupiry e queijo mussarela",img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQke6CtoUvXkyaU6V3ARh-XU1JAZax1FHzolg&s"},
+{nome:"Frango Bacon",preco:39,desc:"Frango desfiado, bacon crocante e queijo",img:"https://img.freepik.com/fotos-premium/pizza-com-bacon-de-frango-e-pimentao-e-queijo_112304-1464.jpg?w=360"},
+{nome:"Suprema",preco:42,desc:"Frango, calabresa, bacon, milho, catupiry e queijo",img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiL9PSPgrdSFep-J1kKpRPC6-wMBur53a0yQ&s"},
+{nome:"Especial da Casa",preco:45,desc:"Mix especial da casa com ingredientes selecionados",img:"https://senzapizzeria.com.br/wp-content/uploads/2023/11/pizza-grande-4-sabores.jpeg"},
+{nome:"Napolitana",preco:31,desc:"Tomate, parmesão, molho de tomate e queijo mussarela",img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQqpAMVzR6y3FmgVVVMo5PmlEdLVt41-4K_NQ&s"}
+];
+
+const menu=document.getElementById("menu");
+pizzas.forEach(p=>{
+menu.innerHTML+=`
+<div class="card ${p.maisVendido ? 'combo-destaque' : ''}">
+${p.maisVendido ? `<div class="faixa">🔥 MAIS VENDIDO</div><div class="desconto">30% OFF</div>` : ""}
+<img src="${p.img}">
+<div class="content">
+<div class="nome">${p.nome}</div>
+<div class="desc">${p.desc}</div>
+<div class="preco">${p.maisVendido ? `<span class="old">R$ 60,00</span>` : ""}R$ ${p.preco.toFixed(2)}</div>
+<button onclick="add('${p.nome}',${p.preco})">Adicionar</button>
+</div>
+</div>`;
+});
+
+/* CARRINHO */
+let carrinho=[];
+
+function add(nome,preco){
+let item=carrinho.find(i=>i.nome===nome);
+if(item) item.qtd++;
+else carrinho.push({nome,preco,qtd:1});
+render();
+}
+
+function render(){
+let total=0,qtd=0;
+let box=document.getElementById("itens");
+box.innerHTML="";
+carrinho.forEach(i=>{
+total+=i.preco*i.qtd;
+qtd+=i.qtd;
+box.innerHTML+=`
+<div class="item">
+<span>${i.nome}</span>
+<span class="qtd">${i.qtd}</span>
+</div>`;
+});
+document.getElementById("total").innerText=total;
+document.getElementById("badge").innerText=qtd;
+}
+
+function toggleCart(){
+document.getElementById("cart").classList.toggle("active");
+}
+
+/* FINALIZAR */
+async function finalizar(){
+
+const nome=document.getElementById("nome").value;
+const endereco=document.getElementById("endereco").value;
+const numero=document.getElementById("numero").value;
+const bairro=document.getElementById("bairro").value;
+const complemento=document.getElementById("complemento").value;
+const ponto=document.getElementById("ponto").value;
+const whatsapp=document.getElementById("whatsapp").value;
+const total=document.getElementById("total").innerText;
+
+let lista="";
+carrinho.forEach(i=>{
+lista+=`<div style="display:flex;justify-content:space-between;">
+<span>${i.nome}</span><span>x${i.qtd}</span></div>`;
+});
+
+const confirm=document.createElement("div");
+confirm.className="overlay";
+
+confirm.innerHTML=`
+<div style="background:white;padding:20px;border-radius:12px;width:320px;position:relative;">
+
+<div onclick="this.parentElement.parentElement.remove()"
+style="position:absolute;top:-10px;right:-10px;width:30px;height:30px;background:#d62828;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">✖</div>
+
+<img src="https://i.imgur.com/h9h7Gwl.png"
+style="width:100%;height:120px;object-fit:cover;border-radius:10px;margin-bottom:10px;">
+
+<h3>Confirme seu pedido</h3>
+
+${lista}
+
+<p><strong>Total: R$ ${total}</strong></p>
+
+<p><strong>Nome:</strong> ${nome}</p>
+<p><strong>Endereço:</strong> ${endereco}, ${numero}</p>
+<p><strong>Bairro:</strong> ${bairro}</p>
+<p><strong>Complemento:</strong> ${complemento}</p>
+<p><strong>Ponto:</strong> ${ponto}</p>
+<p><strong>WhatsApp:</strong> ${whatsapp}</p>
+
+<button id="pix">Pagar com PIX</button>
+
+</div>`;
+
+document.body.appendChild(confirm);
+
+document.getElementById("pix").onclick=async function(){
+
+confirm.remove();
+
+const load=document.createElement("div");
+load.className="overlay";
+load.innerHTML="<div style='background:white;padding:20px;'>Gerando PIX...</div>";
+document.body.appendChild(load);
+
+await new Promise(r=>setTimeout(r,3000));
+
+const res=await fetch("https://pizzaria-backend-hfur.onrender.com/criar-pix",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+amount:total,
+payerName:nome,
+payerDocument:"12345678900"
+})
+});
+
+const data=await res.json();
+load.remove();
+
+const popup=document.createElement("div");
+popup.className="overlay";
+
+popup.innerHTML=`
+<div style="background:white;padding:20px;border-radius:12px;width:320px;text-align:center">
+<h3>PIX Gerado</h3>
+<canvas id="qr"></canvas>
+<button onclick="navigator.clipboard.writeText('${data.copyPaste}')">Copiar PIX</button>
+</div>`;
+
+document.body.appendChild(popup);
+QRCode.toCanvas(document.getElementById("qr"),data.copyPaste);
+setTimeout(()=>{
+
+const pago=document.createElement("div");
+pago.className="overlay";
+
+pago.innerHTML=`
+<div style="background:white;padding:20px;border-radius:12px;width:300px;text-align:center;">
+<h2 style="color:#2a9d8f;">✅ Pagamento confirmado!</h2>
+<p>Seu pedido foi recebido e já está sendo preparado 🍕</p>
+<button onclick="this.parentElement.parentElement.remove()">Fechar</button>
+</div>`;
+
+document.body.appendChild(pago);
+
+},50000); // 50 segundos
+
+};
+
+}
+
+</script>
+
+</body>
+</html>
